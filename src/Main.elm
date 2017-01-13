@@ -16,8 +16,12 @@ main =
 -- MODEL
 
 
-type alias Grid =
+type alias IndexedGrid =
     Array (Array Bool)
+
+
+type alias Grid =
+    List (List Bool)
 
 
 type alias Model =
@@ -28,16 +32,24 @@ type alias Model =
 
 model : Model
 model =
-    Model
-        (Array.fromList
-            ([ Array.fromList <| [ False, True, False ] ++ padDead
-             , Array.fromList <| [ False, False, True ] ++ padDead
-             , Array.fromList <| [ True, True, True ] ++ padDead
-             ]
-                ++ List.map (\_ -> (Array.fromList padDead)) (List.range 1 47)
-            )
-        )
-        "hej"
+    { grid = initGrid
+    , text = "hej"
+    }
+
+
+initGrid : List (List Bool)
+initGrid =
+    (++) [ [ False, True, False ] ++ padDead, [ False, False, True ] ++ padDead, [ True, True, True ] ++ padDead ] padDeadRow
+
+
+padDeadRow : List (List Bool)
+padDeadRow =
+    List.range 1 97 |> List.map (\_ -> padDead)
+
+
+padDead : List Bool
+padDead =
+    List.range 1 97 |> List.map (\_ -> False)
 
 
 
@@ -60,27 +72,45 @@ lifeGoesOn model =
     { model | text = model.text ++ "!", grid = killAndSpawn model.grid }
 
 
+indexGrid : Grid -> IndexedGrid
+indexGrid grid =
+    grid |> fromList |> Array.map fromList
+
+
+indexGridToGrid : IndexedGrid -> Grid
+indexGridToGrid indexedGrid =
+    indexedGrid |> toList |> List.map toList
+
+
+gridToIndexedList : Grid -> List ( Int, List ( Int, Bool ) )
+gridToIndexedList grid =
+    grid |> (List.indexedMap (,)) |> List.map (\( i, b ) -> ( i, (List.indexedMap (,) b) ))
+
+
+indexedListToGrid : List ( Int, List ( Int, Bool ) ) -> Grid
+indexedListToGrid indexedList =
+    let
+        removeIndex =
+            (\( _, b ) -> b)
+    in
+        indexedList |> List.map removeIndex |> List.map (\x -> List.map removeIndex x)
+
+
 killAndSpawn : Grid -> Grid
 killAndSpawn grid =
-    -- [(0, Array Bool) ... ]
-    fromIndexedList (List.map (killAndSpawnRow grid) (toIndexedList grid))
-
-
-killAndSpawnRow : Grid -> ( Int, Array Bool ) -> ( Int, Array Bool )
-killAndSpawnRow grid ( y, row ) =
     let
-        newRow =
-            fromIndexedList (deathRow grid y (toIndexedList row))
+        indexedGrid =
+            indexGrid grid
     in
-        ( y, newRow )
+        indexedListToGrid <| List.map (killAndSpawnRow indexedGrid) (toIndexedList indexedGrid)
 
 
-fromIndexedList : List ( Int, a ) -> Array a
-fromIndexedList list =
-    fromList <| List.map (\( a, b ) -> b) list
+killAndSpawnRow : IndexedGrid -> ( Int, Array Bool ) -> ( Int, List ( Int, Bool ) )
+killAndSpawnRow grid ( y, row ) =
+    ( y, deathRow grid y (toIndexedList row) )
 
 
-deathRow : Grid -> Int -> List ( Int, Bool ) -> List ( Int, Bool )
+deathRow : IndexedGrid -> Int -> List ( Int, Bool ) -> List ( Int, Bool )
 deathRow grid y row =
     case row of
         ( x_, alive ) :: t ->
@@ -102,7 +132,7 @@ deathRow grid y row =
             []
 
 
-countLivingNeighbours : Grid -> Int -> Int -> Int
+countLivingNeighbours : IndexedGrid -> Int -> Int -> Int
 countLivingNeighbours grid x y =
     let
         getNeighbourCoords x y =
@@ -119,16 +149,11 @@ countLivingNeighbours grid x y =
         ncoords =
             getNeighbourCoords x y
     in
-        List.length <| List.filter (checkIfAlive grid) ncoords
+        List.length <| List.filter (gridGetter grid) ncoords
 
 
-checkIfAlive : Grid -> ( Int, Int ) -> Bool
-checkIfAlive grid ( x, y ) =
-    gridGetter grid x y
-
-
-gridGetter : Grid -> Int -> Int -> Bool
-gridGetter grid x y =
+gridGetter : IndexedGrid -> ( Int, Int ) -> Bool
+gridGetter grid ( x, y ) =
     let
         row =
             Maybe.withDefault (fromList []) <| get y grid
@@ -166,13 +191,7 @@ createRows grid =
             0
 
         indexedList =
-            grid
-                -- Ex: grid = arr [ arr [ True ], arr [ False, True ] ]
-                |>
-                    toIndexedList
-                -- list [ (0, arr [ True ]), (1, arr [ False, True ]) ]
-                |>
-                    List.map indexListUtil
+            grid |> gridToIndexedList
 
         -- list [ (0, list [ (0, True) ]), (1, list [ (0, False), (1, True) ] ) ]
     in
@@ -206,55 +225,3 @@ toBox yVar ( xVar, _ ) =
 isLife : ( Int, Bool ) -> Bool
 isLife ( _, boolValue ) =
     boolValue
-
-
-padDead : List Bool
-padDead =
-    [ False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    , False
-    ]
