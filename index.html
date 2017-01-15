@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><meta charset="UTF-8"><title>Main</title><style>html,head,body { padding:0; margin:0; }
+<html><head><meta charset="UTF-8"><title>App</title><style>html,head,body { padding:0; margin:0; }
 body { font-family: calibri, helvetica, arial, sans-serif; }</style><script type="text/javascript">
 (function() {
 'use strict';
@@ -8217,69 +8217,62 @@ var _elm_lang$svg$Svg_Attributes$additive = _elm_lang$virtual_dom$VirtualDom$att
 var _elm_lang$svg$Svg_Attributes$accumulate = _elm_lang$virtual_dom$VirtualDom$attribute('accumulate');
 var _elm_lang$svg$Svg_Attributes$accelerate = _elm_lang$virtual_dom$VirtualDom$attribute('accelerate');
 var _elm_lang$svg$Svg_Attributes$accentHeight = _elm_lang$virtual_dom$VirtualDom$attribute('accent-height');
-var _user$project$Main$isLife = function (_p0) {
-	var _p1 = _p0;
-	return _p1._1;
-};
-var _user$project$Main$toBox = F2(
-	function (yVar, _p2) {
-		var _p3 = _p2;
-		var yCoord = _elm_lang$core$Basics$toString(yVar);
-		var xCoord = _elm_lang$core$Basics$toString(_p3._0);
-		return A2(
-			_elm_lang$svg$Svg$rect,
-			{
-				ctor: '::',
-				_0: _elm_lang$svg$Svg_Attributes$x(xCoord),
-				_1: {
-					ctor: '::',
-					_0: _elm_lang$svg$Svg_Attributes$y(yCoord),
-					_1: {
-						ctor: '::',
-						_0: _elm_lang$svg$Svg_Attributes$width('1'),
-						_1: {
-							ctor: '::',
-							_0: _elm_lang$svg$Svg_Attributes$height('1'),
-							_1: {
-								ctor: '::',
-								_0: _elm_lang$svg$Svg_Attributes$fill('#FFFFFF'),
-								_1: {ctor: '[]'}
-							}
-						}
-					}
-				}
-			},
-			{ctor: '[]'});
-	});
-var _user$project$Main$createRow = function (_p4) {
-	var _p5 = _p4;
+var _user$project$Types$gridToIndexedList = function (grid) {
 	return A2(
 		_elm_lang$core$List$map,
-		_user$project$Main$toBox(_p5._0),
-		A2(_elm_lang$core$List$filter, _user$project$Main$isLife, _p5._1));
+		function (_p0) {
+			var _p1 = _p0;
+			return {
+				ctor: '_Tuple2',
+				_0: _p1._0,
+				_1: A2(
+					_elm_lang$core$List$indexedMap,
+					F2(
+						function (v0, v1) {
+							return {ctor: '_Tuple2', _0: v0, _1: v1};
+						}),
+					_p1._1)
+			};
+		},
+		A2(
+			_elm_lang$core$List$indexedMap,
+			F2(
+				function (v0, v1) {
+					return {ctor: '_Tuple2', _0: v0, _1: v1};
+				}),
+			grid));
 };
-var _user$project$Main$indexListUtil = function (_p6) {
-	var _p7 = _p6;
-	return {
-		ctor: '_Tuple2',
-		_0: _p7._0,
-		_1: _elm_lang$core$Array$toIndexedList(_p7._1)
-	};
+var _user$project$Types$indexGridToGrid = function (indexedGrid) {
+	return A2(
+		_elm_lang$core$List$map,
+		_elm_lang$core$Array$toList,
+		_elm_lang$core$Array$toList(indexedGrid));
 };
-var _user$project$Main$gridGetter = F2(
-	function (grid, _p8) {
-		var _p9 = _p8;
+var _user$project$Types$indexGrid = function (grid) {
+	return A2(
+		_elm_lang$core$Array$map,
+		_elm_lang$core$Array$fromList,
+		_elm_lang$core$Array$fromList(grid));
+};
+var _user$project$Types$Model = F2(
+	function (a, b) {
+		return {grid: a, text: b};
+	});
+var _user$project$Types$Tick = {ctor: 'Tick'};
+var _user$project$State$gridGetter = F2(
+	function (grid, _p0) {
+		var _p1 = _p0;
 		var row = A2(
 			_elm_lang$core$Maybe$withDefault,
 			_elm_lang$core$Array$fromList(
 				{ctor: '[]'}),
-			A2(_elm_lang$core$Array$get, _p9._1, grid));
+			A2(_elm_lang$core$Array$get, _p1._1, grid));
 		return A2(
 			_elm_lang$core$Maybe$withDefault,
 			false,
-			A2(_elm_lang$core$Array$get, _p9._0, row));
+			A2(_elm_lang$core$Array$get, _p1._0, row));
 	});
-var _user$project$Main$countLivingNeighbours = F3(
+var _user$project$State$countLivingNeighbours = F3(
 	function (grid, x, y) {
 		var getNeighbourCoords = F2(
 			function (x, y) {
@@ -8321,67 +8314,67 @@ var _user$project$Main$countLivingNeighbours = F3(
 		return _elm_lang$core$List$length(
 			A2(
 				_elm_lang$core$List$filter,
-				_user$project$Main$gridGetter(grid),
+				_user$project$State$gridGetter(grid),
 				ncoords));
 	});
-var _user$project$Main$deathRow = F3(
+var _user$project$State$deathRow = F3(
 	function (grid, y, row) {
-		var _p10 = row;
-		if (_p10.ctor === '::') {
-			var _p12 = _p10._0._0;
-			var _p11 = _p10._1;
-			var neighbours = A3(_user$project$Main$countLivingNeighbours, grid, _p12, y);
-			return _p10._0._1 ? (((_elm_lang$core$Native_Utils.cmp(neighbours, 3) > 0) || (_elm_lang$core$Native_Utils.cmp(neighbours, 2) < 0)) ? A2(
+		var _p2 = row;
+		if (_p2.ctor === '::') {
+			var _p4 = _p2._0._0;
+			var _p3 = _p2._1;
+			var neighbours = A3(_user$project$State$countLivingNeighbours, grid, _p4, y);
+			return _p2._0._1 ? (((_elm_lang$core$Native_Utils.cmp(neighbours, 3) > 0) || (_elm_lang$core$Native_Utils.cmp(neighbours, 2) < 0)) ? A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p12, _1: false},
+					_0: {ctor: '_Tuple2', _0: _p4, _1: false},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$Main$deathRow, grid, y, _p11)) : A2(
+				A3(_user$project$State$deathRow, grid, y, _p3)) : A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p12, _1: true},
+					_0: {ctor: '_Tuple2', _0: _p4, _1: true},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$Main$deathRow, grid, y, _p11))) : (_elm_lang$core$Native_Utils.eq(neighbours, 3) ? A2(
+				A3(_user$project$State$deathRow, grid, y, _p3))) : (_elm_lang$core$Native_Utils.eq(neighbours, 3) ? A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p12, _1: true},
+					_0: {ctor: '_Tuple2', _0: _p4, _1: true},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$Main$deathRow, grid, y, _p11)) : A2(
+				A3(_user$project$State$deathRow, grid, y, _p3)) : A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p12, _1: false},
+					_0: {ctor: '_Tuple2', _0: _p4, _1: false},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$Main$deathRow, grid, y, _p11)));
+				A3(_user$project$State$deathRow, grid, y, _p3)));
 		} else {
 			return {ctor: '[]'};
 		}
 	});
-var _user$project$Main$killAndSpawnRow = F2(
-	function (grid, _p13) {
-		var _p14 = _p13;
-		var _p15 = _p14._0;
+var _user$project$State$killAndSpawnRow = F2(
+	function (grid, _p5) {
+		var _p6 = _p5;
+		var _p7 = _p6._0;
 		return {
 			ctor: '_Tuple2',
-			_0: _p15,
+			_0: _p7,
 			_1: A3(
-				_user$project$Main$deathRow,
+				_user$project$State$deathRow,
 				grid,
-				_p15,
-				_elm_lang$core$Array$toIndexedList(_p14._1))
+				_p7,
+				_elm_lang$core$Array$toIndexedList(_p6._1))
 		};
 	});
-var _user$project$Main$indexedListToGrid = function (indexedList) {
-	var removeIndex = function (_p16) {
-		var _p17 = _p16;
-		return _p17._1;
+var _user$project$State$indexedListToGrid = function (indexedList) {
+	var removeIndex = function (_p8) {
+		var _p9 = _p8;
+		return _p9._1;
 	};
 	return A2(
 		_elm_lang$core$List$map,
@@ -8390,37 +8383,155 @@ var _user$project$Main$indexedListToGrid = function (indexedList) {
 		},
 		A2(_elm_lang$core$List$map, removeIndex, indexedList));
 };
-var _user$project$Main$gridToIndexedList = function (grid) {
+var _user$project$State$killAndSpawn = function (grid) {
+	var indexedGrid = _user$project$Types$indexGrid(grid);
+	return _user$project$State$indexedListToGrid(
+		A2(
+			_elm_lang$core$List$map,
+			_user$project$State$killAndSpawnRow(indexedGrid),
+			_elm_lang$core$Array$toIndexedList(indexedGrid)));
+};
+var _user$project$State$lifeGoesOn = function (model) {
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			text: A2(_elm_lang$core$Basics_ops['++'], model.text, '!'),
+			grid: _user$project$State$killAndSpawn(model.grid)
+		});
+};
+var _user$project$State$padDeadCells = A2(
+	_elm_lang$core$List$map,
+	function (_p10) {
+		return false;
+	},
+	A2(_elm_lang$core$List$range, 1, 97));
+var _user$project$State$padDeadRow = A2(
+	_elm_lang$core$List$map,
+	function (_p11) {
+		return _user$project$State$padDeadCells;
+	},
+	A2(_elm_lang$core$List$range, 1, 97));
+var _user$project$State$update = F2(
+	function (msg, model) {
+		var _p12 = msg;
+		return _user$project$State$lifeGoesOn(model);
+	});
+var _user$project$State$initGrid = A2(
+	_elm_lang$core$Basics_ops['++'],
+	{
+		ctor: '::',
+		_0: A2(
+			_elm_lang$core$Basics_ops['++'],
+			{
+				ctor: '::',
+				_0: false,
+				_1: {
+					ctor: '::',
+					_0: true,
+					_1: {
+						ctor: '::',
+						_0: false,
+						_1: {ctor: '[]'}
+					}
+				}
+			},
+			_user$project$State$padDeadCells),
+		_1: {
+			ctor: '::',
+			_0: A2(
+				_elm_lang$core$Basics_ops['++'],
+				{
+					ctor: '::',
+					_0: false,
+					_1: {
+						ctor: '::',
+						_0: false,
+						_1: {
+							ctor: '::',
+							_0: true,
+							_1: {ctor: '[]'}
+						}
+					}
+				},
+				_user$project$State$padDeadCells),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$core$Basics_ops['++'],
+					{
+						ctor: '::',
+						_0: true,
+						_1: {
+							ctor: '::',
+							_0: true,
+							_1: {
+								ctor: '::',
+								_0: true,
+								_1: {ctor: '[]'}
+							}
+						}
+					},
+					_user$project$State$padDeadCells),
+				_1: {ctor: '[]'}
+			}
+		}
+	},
+	_user$project$State$padDeadRow);
+var _user$project$State$model = {grid: _user$project$State$initGrid, text: 'hej'};
+var _user$project$View$isLife = function (_p0) {
+	var _p1 = _p0;
+	return _p1._1;
+};
+var _user$project$View$toBox = F2(
+	function (yVar, _p2) {
+		var _p3 = _p2;
+		var yCoord = _elm_lang$core$Basics$toString(yVar);
+		var xCoord = _elm_lang$core$Basics$toString(_p3._0);
+		return A2(
+			_elm_lang$svg$Svg$rect,
+			{
+				ctor: '::',
+				_0: _elm_lang$svg$Svg_Attributes$x(xCoord),
+				_1: {
+					ctor: '::',
+					_0: _elm_lang$svg$Svg_Attributes$y(yCoord),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$svg$Svg_Attributes$width('1'),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$svg$Svg_Attributes$height('1'),
+							_1: {
+								ctor: '::',
+								_0: _elm_lang$svg$Svg_Attributes$fill('#FFFFFF'),
+								_1: {ctor: '[]'}
+							}
+						}
+					}
+				}
+			},
+			{ctor: '[]'});
+	});
+var _user$project$View$createRow = function (_p4) {
+	var _p5 = _p4;
 	return A2(
 		_elm_lang$core$List$map,
-		function (_p18) {
-			var _p19 = _p18;
-			return {
-				ctor: '_Tuple2',
-				_0: _p19._0,
-				_1: A2(
-					_elm_lang$core$List$indexedMap,
-					F2(
-						function (v0, v1) {
-							return {ctor: '_Tuple2', _0: v0, _1: v1};
-						}),
-					_p19._1)
-			};
-		},
-		A2(
-			_elm_lang$core$List$indexedMap,
-			F2(
-				function (v0, v1) {
-					return {ctor: '_Tuple2', _0: v0, _1: v1};
-				}),
-			grid));
+		_user$project$View$toBox(_p5._0),
+		A2(_elm_lang$core$List$filter, _user$project$View$isLife, _p5._1));
 };
-var _user$project$Main$createRows = function (grid) {
-	var indexedList = _user$project$Main$gridToIndexedList(grid);
-	var y = 0;
-	return A2(_elm_lang$core$List$concatMap, _user$project$Main$createRow, indexedList);
+var _user$project$View$indexListUtil = function (_p6) {
+	var _p7 = _p6;
+	return {
+		ctor: '_Tuple2',
+		_0: _p7._0,
+		_1: _elm_lang$core$Array$toIndexedList(_p7._1)
+	};
 };
-var _user$project$Main$displayModel = function (model) {
+var _user$project$View$createRows = function (grid) {
+	var indexedList = _user$project$Types$gridToIndexedList(grid);
+	return A2(_elm_lang$core$List$concatMap, _user$project$View$createRow, indexedList);
+};
+var _user$project$View$displayModel = function (model) {
 	var grid = model.grid;
 	return A2(
 		_elm_lang$svg$Svg$svg,
@@ -8463,137 +8574,22 @@ var _user$project$Main$displayModel = function (model) {
 					{ctor: '[]'}),
 				_1: {ctor: '[]'}
 			},
-			_user$project$Main$createRows(grid)));
+			_user$project$View$createRows(grid)));
 };
-var _user$project$Main$indexGridToGrid = function (indexedGrid) {
-	return A2(
-		_elm_lang$core$List$map,
-		_elm_lang$core$Array$toList,
-		_elm_lang$core$Array$toList(indexedGrid));
-};
-var _user$project$Main$indexGrid = function (grid) {
-	return A2(
-		_elm_lang$core$Array$map,
-		_elm_lang$core$Array$fromList,
-		_elm_lang$core$Array$fromList(grid));
-};
-var _user$project$Main$killAndSpawn = function (grid) {
-	var indexedGrid = _user$project$Main$indexGrid(grid);
-	return _user$project$Main$indexedListToGrid(
-		A2(
-			_elm_lang$core$List$map,
-			_user$project$Main$killAndSpawnRow(indexedGrid),
-			_elm_lang$core$Array$toIndexedList(indexedGrid)));
-};
-var _user$project$Main$lifeGoesOn = function (model) {
-	return _elm_lang$core$Native_Utils.update(
-		model,
-		{
-			text: A2(_elm_lang$core$Basics_ops['++'], model.text, '!'),
-			grid: _user$project$Main$killAndSpawn(model.grid)
-		});
-};
-var _user$project$Main$update = F2(
-	function (msg, model) {
-		var _p20 = msg;
-		return _user$project$Main$lifeGoesOn(model);
-	});
-var _user$project$Main$padDead = A2(
-	_elm_lang$core$List$map,
-	function (_p21) {
-		return false;
-	},
-	A2(_elm_lang$core$List$range, 1, 97));
-var _user$project$Main$padDeadRow = A2(
-	_elm_lang$core$List$map,
-	function (_p22) {
-		return _user$project$Main$padDead;
-	},
-	A2(_elm_lang$core$List$range, 1, 97));
-var _user$project$Main$initGrid = A2(
-	F2(
-		function (x, y) {
-			return A2(_elm_lang$core$Basics_ops['++'], x, y);
-		}),
-	{
-		ctor: '::',
-		_0: A2(
-			_elm_lang$core$Basics_ops['++'],
-			{
-				ctor: '::',
-				_0: false,
-				_1: {
-					ctor: '::',
-					_0: true,
-					_1: {
-						ctor: '::',
-						_0: false,
-						_1: {ctor: '[]'}
-					}
-				}
-			},
-			_user$project$Main$padDead),
-		_1: {
-			ctor: '::',
-			_0: A2(
-				_elm_lang$core$Basics_ops['++'],
-				{
-					ctor: '::',
-					_0: false,
-					_1: {
-						ctor: '::',
-						_0: false,
-						_1: {
-							ctor: '::',
-							_0: true,
-							_1: {ctor: '[]'}
-						}
-					}
-				},
-				_user$project$Main$padDead),
-			_1: {
-				ctor: '::',
-				_0: A2(
-					_elm_lang$core$Basics_ops['++'],
-					{
-						ctor: '::',
-						_0: true,
-						_1: {
-							ctor: '::',
-							_0: true,
-							_1: {
-								ctor: '::',
-								_0: true,
-								_1: {ctor: '[]'}
-							}
-						}
-					},
-					_user$project$Main$padDead),
-				_1: {ctor: '[]'}
-			}
-		}
-	},
-	_user$project$Main$padDeadRow);
-var _user$project$Main$model = {grid: _user$project$Main$initGrid, text: 'hej'};
-var _user$project$Main$Model = F2(
-	function (a, b) {
-		return {grid: a, text: b};
-	});
-var _user$project$Main$Tick = {ctor: 'Tick'};
-var _user$project$Main$view = function (model) {
+var _user$project$View$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Main$displayModel(model),
+			_0: _user$project$View$displayModel(model),
 			_1: {
 				ctor: '::',
 				_0: A2(
 					_elm_lang$html$Html$button,
 					{
 						ctor: '::',
-						_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$Tick),
+						_0: _elm_lang$html$Html_Events$onClick(_user$project$Types$Tick),
 						_1: {ctor: '[]'}
 					},
 					{
@@ -8609,12 +8605,12 @@ var _user$project$Main$view = function (model) {
 			}
 		});
 };
-var _user$project$Main$main = _elm_lang$html$Html$beginnerProgram(
-	{model: _user$project$Main$model, view: _user$project$Main$view, update: _user$project$Main$update})();
+var _user$project$App$main = _elm_lang$html$Html$beginnerProgram(
+	{model: _user$project$State$model, view: _user$project$View$view, update: _user$project$State$update})();
 var Elm = {};
-Elm['Main'] = Elm['Main'] || {};
-if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', undefined);
+Elm['App'] = Elm['App'] || {};
+if (typeof _user$project$App$main !== 'undefined') {
+    _user$project$App$main(Elm['App'], 'App', undefined);
 }
 
 if (typeof define === "function" && define['amd'])
@@ -8646,4 +8642,4 @@ for (var publicModule in Elm)
 }
 
 }).call(this);
-</script></head><body><script type="text/javascript">Elm.Main.fullscreen()</script></body></html>
+</script></head><body><script type="text/javascript">Elm.App.fullscreen()</script></body></html>
