@@ -1,6 +1,7 @@
 module Types exposing (..)
 
 import Array exposing (..)
+import Time exposing (Time)
 
 
 type alias IndexedGrid =
@@ -14,11 +15,16 @@ type alias Grid =
 type alias Model =
     { grid : Grid
     , text : String
+    , timeIsTicking : Bool
+    , speed : Float
     }
 
 
 type Msg
-    = Tick
+    = Tick Time
+    | Stop
+    | Start
+    | AdjustSpeed Float
 
 
 indexGrid : Grid -> IndexedGrid

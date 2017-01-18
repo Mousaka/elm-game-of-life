@@ -2,16 +2,44 @@ module View exposing (view)
 
 import Types exposing (..)
 import Html exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
+import Html.Attributes as H exposing (..)
 import Svg exposing (..)
-import Svg.Attributes exposing (..)
+import Svg.Attributes as S exposing (..)
 import Array exposing (..)
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ displayModel model, button [ onClick Tick ] [ Html.text "Tick" ], Html.text model.text ]
+        [ displayModel model, buttons model.speed, Html.text model.text ]
+
+
+buttons : Float -> Html Msg
+buttons modelSpeed =
+    div []
+        [ button [ onClick (Tick 1) ] [ Html.text "Tick" ]
+        , button [ onClick (Start) ] [ Html.text "Start" ]
+        , button [ onClick (Stop) ] [ Html.text "Stop" ]
+        , input
+            [ H.type_ "range"
+            , H.min "0"
+            , H.max "20"
+            , value <| toString modelSpeed
+            , onInput <| strToFloatMsg modelSpeed
+            ]
+            []
+        ]
+
+
+strToFloatMsg : Float -> String -> Msg
+strToFloatMsg modelSpeed str =
+    case String.toFloat str of
+        Err _ ->
+            AdjustSpeed modelSpeed
+
+        Ok val ->
+            AdjustSpeed val
 
 
 displayModel : Model -> Html Msg
@@ -21,8 +49,8 @@ displayModel model =
             model.grid
     in
         svg
-            [ width "750", height "750", viewBox "0 0 100 100" ]
-            ([ rect [ x "0", y "0", width "100", height "100" ] [] ]
+            [ S.width "750", S.height "750", viewBox "0 0 100 100" ]
+            ([ rect [ x "0", y "0", S.width "100", S.height "100" ] [] ]
                 ++ createRows grid
             )
 
@@ -59,7 +87,7 @@ toBox yVar ( xVar, _ ) =
         yCoord =
             toString yVar
     in
-        rect [ x xCoord, y yCoord, width "1", height "1", fill "#FFFFFF" ] []
+        rect [ x xCoord, y yCoord, S.width "1", S.height "1", fill "#FFFFFF" ] []
 
 
 isLife : ( Int, Bool ) -> Bool

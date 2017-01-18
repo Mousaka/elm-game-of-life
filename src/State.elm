@@ -1,14 +1,18 @@
-module State exposing (update, model)
+module State exposing (update, init)
 
 import Types exposing (..)
 import Array exposing (..)
 
 
-model : Model
-model =
-    { grid = initGrid
-    , text = "hej"
-    }
+init : ( Model, Cmd Msg )
+init =
+    ( { grid = initGrid
+      , text = "hej"
+      , timeIsTicking = True
+      , speed = 1
+      }
+    , Cmd.none
+    )
 
 
 initGrid : List (List Bool)
@@ -20,11 +24,25 @@ initGrid =
         ++ (padDeadRow 97)
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    ( updateUtil msg model, Cmd.none )
+
+
+updateUtil : Msg -> Model -> Model
+updateUtil msg model =
     case msg of
-        Tick ->
+        Tick _ ->
             lifeGoesOn model
+
+        Start ->
+            { model | timeIsTicking = True }
+
+        Stop ->
+            { model | timeIsTicking = False }
+
+        AdjustSpeed adjustedSpeed ->
+            { model | speed = adjustedSpeed }
 
 
 padDeadRow : Int -> List (List Bool)
