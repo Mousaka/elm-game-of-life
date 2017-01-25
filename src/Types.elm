@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Array exposing (..)
 import Time exposing (Time)
+import Mouse exposing (Position)
 
 
 type alias IndexedGrid =
@@ -25,6 +26,11 @@ type Msg
     | Stop
     | Start
     | AdjustSpeed Float
+    | MouseClick Position
+
+
+type alias Cell =
+    { x : Int, y : Int }
 
 
 indexGrid : Grid -> IndexedGrid

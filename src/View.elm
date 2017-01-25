@@ -49,7 +49,7 @@ displayModel model =
             model.grid
     in
         svg
-            [ S.width "750", S.height "750", viewBox "0 0 100 100" ]
+            [ S.width "1000", S.height "1000", viewBox "0 0 100 100" ]
             ([ rect [ x "0", y "0", S.width "100", S.height "100" ] [] ]
                 ++ createRows grid
             )

@@ -2,12 +2,13 @@ module State exposing (update, init)
 
 import Types exposing (..)
 import Array exposing (..)
+import Mouse exposing (Position)
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { grid = initGrid
-      , text = "hej"
+      , text = ""
       , timeIsTicking = True
       , speed = 1
       }
@@ -17,9 +18,9 @@ init =
 
 initGrid : List (List Bool)
 initGrid =
-    [ [ False, True, False ] ++ (padDeadCells 97)
-    , [ False, False, True ] ++ (padDeadCells 97)
-    , [ True, True, True ] ++ (padDeadCells 97)
+    [ [ False, False, False ] ++ (padDeadCells 97)
+    , [ False, False, False ] ++ (padDeadCells 97)
+    , [ False, False, False ] ++ (padDeadCells 97)
     ]
         ++ (padDeadRow 97)
 
@@ -44,6 +45,34 @@ updateUtil msg model =
         AdjustSpeed adjustedSpeed ->
             { model | speed = adjustedSpeed }
 
+        MouseClick position ->
+            { model
+                | text =
+                    (toString position.x)
+                        ++ ", "
+                        ++ (toString position.y)
+                        ++ " | "
+                        ++ ((transformPositionToCell 1000 1000 position) |> (\p -> toString p.x ++ ", " ++ toString p.y))
+                , grid = addLife model.grid position
+            }
+
+
+addLife : Grid -> Position -> Grid
+addLife grid position =
+    let
+        awda =
+            transformPositionToCell 1000 1000 position
+    in
+        if awda.x > 99 || awda.y > 99 then
+            grid
+        else
+            grid |> indexGrid |> gridSetterGetter ( awda.x, awda.y ) |> indexGridToGrid
+
+
+transformPositionToCell : Int -> Int -> Position -> Cell
+transformPositionToCell w h position =
+    { x = position.x // 10, y = position.y // 10 }
+
 
 padDeadRow : Int -> List (List Bool)
 padDeadRow n =
@@ -57,7 +86,7 @@ padDeadCells n =
 
 lifeGoesOn : Model -> Model
 lifeGoesOn model =
-    { model | text = model.text ++ "!", grid = killAndSpawn model.grid }
+    { model | grid = killAndSpawn model.grid }
 
 
 indexedListToGrid : List ( Int, List ( Int, Bool ) ) -> Grid
@@ -132,3 +161,20 @@ gridGetter grid ( x, y ) =
             Maybe.withDefault (fromList []) <| get y grid
     in
         Maybe.withDefault False <| get x row
+
+
+gridSetter : ( Int, Int ) -> Bool -> IndexedGrid -> IndexedGrid
+gridSetter ( x, y ) bool grid =
+    let
+        row =
+            Maybe.withDefault (fromList []) <| get y grid
+
+        updatedRow =
+            set x bool row
+    in
+        set y updatedRow grid
+
+
+gridSetterGetter : ( Int, Int ) -> IndexedGrid -> IndexedGrid
+gridSetterGetter pos grid =
+    gridSetter pos (not (gridGetter grid pos)) grid
