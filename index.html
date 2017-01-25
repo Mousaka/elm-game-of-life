@@ -1563,8 +1563,7 @@ function toString(v)
 	var type = typeof v;
 	if (type === 'function')
 	{
-		var name = v.func ? v.func.name : v.name;
-		return '<function' + (name === '' ? '' : ':') + name + '>';
+		return '<function>';
 	}
 
 	if (type === 'boolean')
@@ -2067,6 +2066,13 @@ return {
 var _elm_lang$core$List$sortBy = _elm_lang$core$Native_List.sortBy;
 var _elm_lang$core$List$sort = function (xs) {
 	return A2(_elm_lang$core$List$sortBy, _elm_lang$core$Basics$identity, xs);
+};
+var _elm_lang$core$List$singleton = function (value) {
+	return {
+		ctor: '::',
+		_0: value,
+		_1: {ctor: '[]'}
+	};
 };
 var _elm_lang$core$List$drop = F2(
 	function (n, list) {
@@ -3510,15 +3516,8 @@ function setupIncomingPort(name, callback)
 		sentBeforeInit.push(value);
 	}
 
-	function postInitSend(incomingValue)
+	function postInitSend(value)
 	{
-		var result = A2(_elm_lang$core$Json_Decode$decodeValue, converter, incomingValue);
-		if (result.ctor === 'Err')
-		{
-			throw new Error('Trying to send an unexpected type of value through port `' + name + '`:\n' + result._0);
-		}
-
-		var value = result._0;
 		var temp = subs;
 		while (temp.ctor !== '[]')
 		{
@@ -3529,7 +3528,13 @@ function setupIncomingPort(name, callback)
 
 	function send(incomingValue)
 	{
-		currentSend(incomingValue);
+		var result = A2(_elm_lang$core$Json_Decode$decodeValue, converter, incomingValue);
+		if (result.ctor === 'Err')
+		{
+			throw new Error('Trying to send an unexpected type of value through port `' + name + '`:\n' + result._0);
+		}
+
+		currentSend(result._0);
 	}
 
 	return { send: send };
@@ -4143,7 +4148,7 @@ function endsWith(sub, str)
 function indexes(sub, str)
 {
 	var subLen = sub.length;
-	
+
 	if (subLen < 1)
 	{
 		return _elm_lang$core$Native_List.Nil;
@@ -4156,74 +4161,78 @@ function indexes(sub, str)
 	{
 		is.push(i);
 		i = i + subLen;
-	}	
-	
+	}
+
 	return _elm_lang$core$Native_List.fromArray(is);
 }
+
 
 function toInt(s)
 {
 	var len = s.length;
+
+	// if empty
 	if (len === 0)
 	{
-		return _elm_lang$core$Result$Err("could not convert string '" + s + "' to an Int" );
+		return intErr(s);
 	}
-	var start = 0;
-	if (s[0] === '-')
+
+	// if hex
+	var c = s[0];
+	if (c === '0' && s[1] === 'x')
 	{
-		if (len === 1)
+		for (var i = 2; i < len; ++i)
 		{
-			return _elm_lang$core$Result$Err("could not convert string '" + s + "' to an Int" );
+			var c = s[i];
+			if (('0' <= c && c <= '9') || ('A' <= c && c <= 'F') || ('a' <= c && c <= 'f'))
+			{
+				continue;
+			}
+			return intErr(s);
 		}
-		start = 1;
+		return _elm_lang$core$Result$Ok(parseInt(s, 16));
 	}
-	for (var i = start; i < len; ++i)
+
+	// is decimal
+	if (c > '9' || (c < '0' && c !== '-' && c !== '+'))
+	{
+		return intErr(s);
+	}
+	for (var i = 1; i < len; ++i)
 	{
 		var c = s[i];
 		if (c < '0' || '9' < c)
 		{
-			return _elm_lang$core$Result$Err("could not convert string '" + s + "' to an Int" );
+			return intErr(s);
 		}
 	}
+
 	return _elm_lang$core$Result$Ok(parseInt(s, 10));
 }
 
+function intErr(s)
+{
+	return _elm_lang$core$Result$Err("could not convert string '" + s + "' to an Int");
+}
+
+
 function toFloat(s)
 {
-	var len = s.length;
-	if (len === 0)
+	// check if it is a hex, octal, or binary number
+	if (s.length === 0 || /[\sxbo]/.test(s))
 	{
-		return _elm_lang$core$Result$Err("could not convert string '" + s + "' to a Float" );
+		return floatErr(s);
 	}
-	var start = 0;
-	if (s[0] === '-')
-	{
-		if (len === 1)
-		{
-			return _elm_lang$core$Result$Err("could not convert string '" + s + "' to a Float" );
-		}
-		start = 1;
-	}
-	var dotCount = 0;
-	for (var i = start; i < len; ++i)
-	{
-		var c = s[i];
-		if ('0' <= c && c <= '9')
-		{
-			continue;
-		}
-		if (c === '.')
-		{
-			dotCount += 1;
-			if (dotCount <= 1)
-			{
-				continue;
-			}
-		}
-		return _elm_lang$core$Result$Err("could not convert string '" + s + "' to a Float" );
-	}
-	return _elm_lang$core$Result$Ok(parseFloat(s));
+	var n = +s;
+	// faster isNaN check
+	return n === n ? _elm_lang$core$Result$Ok(n) : floatErr(s);
 }
+
+function floatErr(s)
+{
+	return _elm_lang$core$Result$Err("could not convert string '" + s + "' to a Float");
+}
+
 
 function toList(str)
 {
@@ -5672,11 +5681,6 @@ function badToString(problem)
 				problem = problem.rest;
 				break;
 
-			case 'index':
-				context += '[' + problem.index + ']';
-				problem = problem.rest;
-				break;
-
 			case 'oneOf':
 				var problems = problem.problems;
 				for (var i = 0; i < problems.length; i++)
@@ -6112,6 +6116,9 @@ var _elm_lang$core$Json_Decode$int = _elm_lang$core$Native_Json.decodePrimitive(
 var _elm_lang$core$Json_Decode$bool = _elm_lang$core$Native_Json.decodePrimitive('bool');
 var _elm_lang$core$Json_Decode$string = _elm_lang$core$Native_Json.decodePrimitive('string');
 var _elm_lang$core$Json_Decode$Decoder = {ctor: 'Decoder'};
+var _elm_lang$core$Process$kill = _elm_lang$core$Native_Scheduler.kill;
+var _elm_lang$core$Process$sleep = _elm_lang$core$Native_Scheduler.sleep;
+var _elm_lang$core$Process$spawn = _elm_lang$core$Native_Scheduler.spawn;
 var _elm_lang$core$Tuple$mapSecond = F2(
 	function (func, _p0) {
 		var _p1 = _p0;
@@ -6138,6 +6145,190 @@ var _elm_lang$core$Tuple$first = function (_p6) {
 	var _p7 = _p6;
 	return _p7._0;
 };
+var _elm_lang$dom$Native_Dom = function() {
+
+var fakeNode = {
+	addEventListener: function() {},
+	removeEventListener: function() {}
+};
+
+var onDocument = on(typeof document !== 'undefined' ? document : fakeNode);
+var onWindow = on(typeof window !== 'undefined' ? window : fakeNode);
+
+function on(node)
+{
+	return function(eventName, decoder, toTask)
+	{
+		return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
+
+			function performTask(event)
+			{
+				var result = A2(_elm_lang$core$Json_Decode$decodeValue, decoder, event);
+				if (result.ctor === 'Ok')
+				{
+					_elm_lang$core$Native_Scheduler.rawSpawn(toTask(result._0));
+				}
+			}
+
+			node.addEventListener(eventName, performTask);
+
+			return function()
+			{
+				node.removeEventListener(eventName, performTask);
+			};
+		});
+	};
+}
+
+var rAF = typeof requestAnimationFrame !== 'undefined'
+	? requestAnimationFrame
+	: function(callback) { callback(); };
+
+function withNode(id, doStuff)
+{
+	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback)
+	{
+		rAF(function()
+		{
+			var node = document.getElementById(id);
+			if (node === null)
+			{
+				callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'NotFound', _0: id }));
+				return;
+			}
+			callback(_elm_lang$core$Native_Scheduler.succeed(doStuff(node)));
+		});
+	});
+}
+
+
+// FOCUS
+
+function focus(id)
+{
+	return withNode(id, function(node) {
+		node.focus();
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function blur(id)
+{
+	return withNode(id, function(node) {
+		node.blur();
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+
+// SCROLLING
+
+function getScrollTop(id)
+{
+	return withNode(id, function(node) {
+		return node.scrollTop;
+	});
+}
+
+function setScrollTop(id, desiredScrollTop)
+{
+	return withNode(id, function(node) {
+		node.scrollTop = desiredScrollTop;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function toBottom(id)
+{
+	return withNode(id, function(node) {
+		node.scrollTop = node.scrollHeight;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function getScrollLeft(id)
+{
+	return withNode(id, function(node) {
+		return node.scrollLeft;
+	});
+}
+
+function setScrollLeft(id, desiredScrollLeft)
+{
+	return withNode(id, function(node) {
+		node.scrollLeft = desiredScrollLeft;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function toRight(id)
+{
+	return withNode(id, function(node) {
+		node.scrollLeft = node.scrollWidth;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+
+// SIZE
+
+function width(options, id)
+{
+	return withNode(id, function(node) {
+		switch (options.ctor)
+		{
+			case 'Content':
+				return node.scrollWidth;
+			case 'VisibleContent':
+				return node.clientWidth;
+			case 'VisibleContentWithBorders':
+				return node.offsetWidth;
+			case 'VisibleContentWithBordersAndMargins':
+				var rect = node.getBoundingClientRect();
+				return rect.right - rect.left;
+		}
+	});
+}
+
+function height(options, id)
+{
+	return withNode(id, function(node) {
+		switch (options.ctor)
+		{
+			case 'Content':
+				return node.scrollHeight;
+			case 'VisibleContent':
+				return node.clientHeight;
+			case 'VisibleContentWithBorders':
+				return node.offsetHeight;
+			case 'VisibleContentWithBordersAndMargins':
+				var rect = node.getBoundingClientRect();
+				return rect.bottom - rect.top;
+		}
+	});
+}
+
+return {
+	onDocument: F3(onDocument),
+	onWindow: F3(onWindow),
+
+	focus: focus,
+	blur: blur,
+
+	getScrollTop: getScrollTop,
+	setScrollTop: F2(setScrollTop),
+	getScrollLeft: getScrollLeft,
+	setScrollLeft: F2(setScrollLeft),
+	toBottom: toBottom,
+	toRight: toRight,
+
+	height: F2(height),
+	width: F2(width)
+};
+
+}();
+var _elm_lang$dom$Dom_LowLevel$onWindow = _elm_lang$dom$Native_Dom.onWindow;
+var _elm_lang$dom$Dom_LowLevel$onDocument = _elm_lang$dom$Native_Dom.onDocument;
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrap;
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrapWithFlags;
 
@@ -6400,9 +6591,9 @@ function on(name, options, decoder)
 
 function equalEvents(a, b)
 {
-	if (!a.options === b.options)
+	if (a.options !== b.options)
 	{
-		if (a.stopPropagation !== b.stopPropagation || a.preventDefault !== b.preventDefault)
+		if (a.options.stopPropagation !== b.options.stopPropagation || a.options.preventDefault !== b.options.preventDefault)
 		{
 			return false;
 		}
@@ -7678,7 +7869,7 @@ function normalRenderer(parentNode, view)
 var rAF =
 	typeof requestAnimationFrame !== 'undefined'
 		? requestAnimationFrame
-		: function(callback) { callback(); };
+		: function(callback) { setTimeout(callback, 1000 / 60); };
 
 function makeStepper(domNode, view, initialVirtualNode, eventNode)
 {
@@ -8636,6 +8827,188 @@ var _elm_lang$html$Html_Events$Options = F2(
 	function (a, b) {
 		return {stopPropagation: a, preventDefault: b};
 	});
+var _elm_lang$mouse$Mouse_ops = _elm_lang$mouse$Mouse_ops || {};
+_elm_lang$mouse$Mouse_ops['&>'] = F2(
+	function (t1, t2) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			function (_p0) {
+				return t2;
+			},
+			t1);
+	});
+var _elm_lang$mouse$Mouse$onSelfMsg = F3(
+	function (router, _p1, state) {
+		var _p2 = _p1;
+		var _p3 = A2(_elm_lang$core$Dict$get, _p2.category, state);
+		if (_p3.ctor === 'Nothing') {
+			return _elm_lang$core$Task$succeed(state);
+		} else {
+			var send = function (tagger) {
+				return A2(
+					_elm_lang$core$Platform$sendToApp,
+					router,
+					tagger(_p2.position));
+			};
+			return A2(
+				_elm_lang$mouse$Mouse_ops['&>'],
+				_elm_lang$core$Task$sequence(
+					A2(_elm_lang$core$List$map, send, _p3._0.taggers)),
+				_elm_lang$core$Task$succeed(state));
+		}
+	});
+var _elm_lang$mouse$Mouse$init = _elm_lang$core$Task$succeed(_elm_lang$core$Dict$empty);
+var _elm_lang$mouse$Mouse$categorizeHelpHelp = F2(
+	function (value, maybeValues) {
+		var _p4 = maybeValues;
+		if (_p4.ctor === 'Nothing') {
+			return _elm_lang$core$Maybe$Just(
+				{
+					ctor: '::',
+					_0: value,
+					_1: {ctor: '[]'}
+				});
+		} else {
+			return _elm_lang$core$Maybe$Just(
+				{ctor: '::', _0: value, _1: _p4._0});
+		}
+	});
+var _elm_lang$mouse$Mouse$categorizeHelp = F2(
+	function (subs, subDict) {
+		categorizeHelp:
+		while (true) {
+			var _p5 = subs;
+			if (_p5.ctor === '[]') {
+				return subDict;
+			} else {
+				var _v4 = _p5._1,
+					_v5 = A3(
+					_elm_lang$core$Dict$update,
+					_p5._0._0,
+					_elm_lang$mouse$Mouse$categorizeHelpHelp(_p5._0._1),
+					subDict);
+				subs = _v4;
+				subDict = _v5;
+				continue categorizeHelp;
+			}
+		}
+	});
+var _elm_lang$mouse$Mouse$categorize = function (subs) {
+	return A2(_elm_lang$mouse$Mouse$categorizeHelp, subs, _elm_lang$core$Dict$empty);
+};
+var _elm_lang$mouse$Mouse$subscription = _elm_lang$core$Native_Platform.leaf('Mouse');
+var _elm_lang$mouse$Mouse$Position = F2(
+	function (a, b) {
+		return {x: a, y: b};
+	});
+var _elm_lang$mouse$Mouse$position = A3(
+	_elm_lang$core$Json_Decode$map2,
+	_elm_lang$mouse$Mouse$Position,
+	A2(_elm_lang$core$Json_Decode$field, 'pageX', _elm_lang$core$Json_Decode$int),
+	A2(_elm_lang$core$Json_Decode$field, 'pageY', _elm_lang$core$Json_Decode$int));
+var _elm_lang$mouse$Mouse$Watcher = F2(
+	function (a, b) {
+		return {taggers: a, pid: b};
+	});
+var _elm_lang$mouse$Mouse$Msg = F2(
+	function (a, b) {
+		return {category: a, position: b};
+	});
+var _elm_lang$mouse$Mouse$onEffects = F3(
+	function (router, newSubs, oldState) {
+		var rightStep = F3(
+			function (category, taggers, task) {
+				var tracker = A3(
+					_elm_lang$dom$Dom_LowLevel$onDocument,
+					category,
+					_elm_lang$mouse$Mouse$position,
+					function (_p6) {
+						return A2(
+							_elm_lang$core$Platform$sendToSelf,
+							router,
+							A2(_elm_lang$mouse$Mouse$Msg, category, _p6));
+					});
+				return A2(
+					_elm_lang$core$Task$andThen,
+					function (state) {
+						return A2(
+							_elm_lang$core$Task$andThen,
+							function (pid) {
+								return _elm_lang$core$Task$succeed(
+									A3(
+										_elm_lang$core$Dict$insert,
+										category,
+										A2(_elm_lang$mouse$Mouse$Watcher, taggers, pid),
+										state));
+							},
+							_elm_lang$core$Process$spawn(tracker));
+					},
+					task);
+			});
+		var bothStep = F4(
+			function (category, _p7, taggers, task) {
+				var _p8 = _p7;
+				return A2(
+					_elm_lang$core$Task$andThen,
+					function (state) {
+						return _elm_lang$core$Task$succeed(
+							A3(
+								_elm_lang$core$Dict$insert,
+								category,
+								A2(_elm_lang$mouse$Mouse$Watcher, taggers, _p8.pid),
+								state));
+					},
+					task);
+			});
+		var leftStep = F3(
+			function (category, _p9, task) {
+				var _p10 = _p9;
+				return A2(
+					_elm_lang$mouse$Mouse_ops['&>'],
+					_elm_lang$core$Process$kill(_p10.pid),
+					task);
+			});
+		return A6(
+			_elm_lang$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			oldState,
+			_elm_lang$mouse$Mouse$categorize(newSubs),
+			_elm_lang$core$Task$succeed(_elm_lang$core$Dict$empty));
+	});
+var _elm_lang$mouse$Mouse$MySub = F2(
+	function (a, b) {
+		return {ctor: 'MySub', _0: a, _1: b};
+	});
+var _elm_lang$mouse$Mouse$clicks = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'click', tagger));
+};
+var _elm_lang$mouse$Mouse$moves = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'mousemove', tagger));
+};
+var _elm_lang$mouse$Mouse$downs = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'mousedown', tagger));
+};
+var _elm_lang$mouse$Mouse$ups = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'mouseup', tagger));
+};
+var _elm_lang$mouse$Mouse$subMap = F2(
+	function (func, _p11) {
+		var _p12 = _p11;
+		return A2(
+			_elm_lang$mouse$Mouse$MySub,
+			_p12._0,
+			function (_p13) {
+				return func(
+					_p12._1(_p13));
+			});
+	});
+_elm_lang$core$Native_Platform.effectManagers['Mouse'] = {pkg: 'elm-lang/mouse', init: _elm_lang$mouse$Mouse$init, onEffects: _elm_lang$mouse$Mouse$onEffects, onSelfMsg: _elm_lang$mouse$Mouse$onSelfMsg, tag: 'sub', subMap: _elm_lang$mouse$Mouse$subMap};
 var _elm_lang$svg$Svg$map = _elm_lang$virtual_dom$VirtualDom$map;
 var _elm_lang$svg$Svg$text = _elm_lang$virtual_dom$VirtualDom$text;
 var _elm_lang$svg$Svg$svgNamespace = A2(
@@ -9016,6 +9389,13 @@ var _user$project$Types$Model = F4(
 	function (a, b, c, d) {
 		return {grid: a, text: b, timeIsTicking: c, speed: d};
 	});
+var _user$project$Types$Cell = F2(
+	function (a, b) {
+		return {x: a, y: b};
+	});
+var _user$project$Types$MouseClick = function (a) {
+	return {ctor: 'MouseClick', _0: a};
+};
 var _user$project$Types$AdjustSpeed = function (a) {
 	return {ctor: 'AdjustSpeed', _0: a};
 };
@@ -9024,18 +9404,38 @@ var _user$project$Types$Stop = {ctor: 'Stop'};
 var _user$project$Types$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
-var _user$project$State$gridGetter = F2(
-	function (grid, _p0) {
+var _user$project$State$gridSetter = F3(
+	function (_p0, bool, grid) {
 		var _p1 = _p0;
+		var _p2 = _p1._1;
 		var row = A2(
 			_elm_lang$core$Maybe$withDefault,
 			_elm_lang$core$Array$fromList(
 				{ctor: '[]'}),
-			A2(_elm_lang$core$Array$get, _p1._1, grid));
+			A2(_elm_lang$core$Array$get, _p2, grid));
+		var updatedRow = A3(_elm_lang$core$Array$set, _p1._0, bool, row);
+		return A3(_elm_lang$core$Array$set, _p2, updatedRow, grid);
+	});
+var _user$project$State$gridGetter = F2(
+	function (grid, _p3) {
+		var _p4 = _p3;
+		var row = A2(
+			_elm_lang$core$Maybe$withDefault,
+			_elm_lang$core$Array$fromList(
+				{ctor: '[]'}),
+			A2(_elm_lang$core$Array$get, _p4._1, grid));
 		return A2(
 			_elm_lang$core$Maybe$withDefault,
 			false,
-			A2(_elm_lang$core$Array$get, _p1._0, row));
+			A2(_elm_lang$core$Array$get, _p4._0, row));
+	});
+var _user$project$State$gridSetterGetter = F2(
+	function (pos, grid) {
+		return A3(
+			_user$project$State$gridSetter,
+			pos,
+			!A2(_user$project$State$gridGetter, grid, pos),
+			grid);
 	});
 var _user$project$State$countLivingNeighbours = F3(
 	function (grid, x, y) {
@@ -9084,62 +9484,62 @@ var _user$project$State$countLivingNeighbours = F3(
 	});
 var _user$project$State$deathRow = F3(
 	function (grid, y, row) {
-		var _p2 = row;
-		if (_p2.ctor === '::') {
-			var _p4 = _p2._0._0;
-			var _p3 = _p2._1;
-			var neighbours = A3(_user$project$State$countLivingNeighbours, grid, _p4, y);
-			return _p2._0._1 ? (((_elm_lang$core$Native_Utils.cmp(neighbours, 3) > 0) || (_elm_lang$core$Native_Utils.cmp(neighbours, 2) < 0)) ? A2(
+		var _p5 = row;
+		if (_p5.ctor === '::') {
+			var _p7 = _p5._0._0;
+			var _p6 = _p5._1;
+			var neighbours = A3(_user$project$State$countLivingNeighbours, grid, _p7, y);
+			return _p5._0._1 ? (((_elm_lang$core$Native_Utils.cmp(neighbours, 3) > 0) || (_elm_lang$core$Native_Utils.cmp(neighbours, 2) < 0)) ? A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p4, _1: false},
+					_0: {ctor: '_Tuple2', _0: _p7, _1: false},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p3)) : A2(
+				A3(_user$project$State$deathRow, grid, y, _p6)) : A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p4, _1: true},
+					_0: {ctor: '_Tuple2', _0: _p7, _1: true},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p3))) : (_elm_lang$core$Native_Utils.eq(neighbours, 3) ? A2(
+				A3(_user$project$State$deathRow, grid, y, _p6))) : (_elm_lang$core$Native_Utils.eq(neighbours, 3) ? A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p4, _1: true},
+					_0: {ctor: '_Tuple2', _0: _p7, _1: true},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p3)) : A2(
+				A3(_user$project$State$deathRow, grid, y, _p6)) : A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p4, _1: false},
+					_0: {ctor: '_Tuple2', _0: _p7, _1: false},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p3)));
+				A3(_user$project$State$deathRow, grid, y, _p6)));
 		} else {
 			return {ctor: '[]'};
 		}
 	});
 var _user$project$State$killAndSpawnRow = F2(
-	function (grid, _p5) {
-		var _p6 = _p5;
-		var _p7 = _p6._0;
+	function (grid, _p8) {
+		var _p9 = _p8;
+		var _p10 = _p9._0;
 		return {
 			ctor: '_Tuple2',
-			_0: _p7,
+			_0: _p10,
 			_1: A3(
 				_user$project$State$deathRow,
 				grid,
-				_p7,
-				_elm_lang$core$Array$toIndexedList(_p6._1))
+				_p10,
+				_elm_lang$core$Array$toIndexedList(_p9._1))
 		};
 	});
 var _user$project$State$indexedListToGrid = function (indexedList) {
-	var removeIndex = function (_p8) {
-		var _p9 = _p8;
-		return _p9._1;
+	var removeIndex = function (_p11) {
+		var _p12 = _p11;
+		return _p12._1;
 	};
 	return A2(
 		_elm_lang$core$List$map,
@@ -9160,14 +9560,13 @@ var _user$project$State$lifeGoesOn = function (model) {
 	return _elm_lang$core$Native_Utils.update(
 		model,
 		{
-			text: A2(_elm_lang$core$Basics_ops['++'], model.text, '!'),
 			grid: _user$project$State$killAndSpawn(model.grid)
 		});
 };
 var _user$project$State$padDeadCells = function (n) {
 	return A2(
 		_elm_lang$core$List$map,
-		function (_p10) {
+		function (_p13) {
 			return false;
 		},
 		A2(_elm_lang$core$List$range, 1, n));
@@ -9175,15 +9574,28 @@ var _user$project$State$padDeadCells = function (n) {
 var _user$project$State$padDeadRow = function (n) {
 	return A2(
 		_elm_lang$core$List$map,
-		function (_p11) {
+		function (_p14) {
 			return _user$project$State$padDeadCells(100);
 		},
 		A2(_elm_lang$core$List$range, 1, n));
 };
+var _user$project$State$transformPositionToCell = F3(
+	function (w, h, position) {
+		return {x: (position.x / 10) | 0, y: (position.y / 10) | 0};
+	});
+var _user$project$State$addLife = F2(
+	function (grid, position) {
+		var awda = A3(_user$project$State$transformPositionToCell, 1000, 1000, position);
+		return ((_elm_lang$core$Native_Utils.cmp(awda.x, 99) > 0) || (_elm_lang$core$Native_Utils.cmp(awda.y, 99) > 0)) ? grid : _user$project$Types$indexGridToGrid(
+			A2(
+				_user$project$State$gridSetterGetter,
+				{ctor: '_Tuple2', _0: awda.x, _1: awda.y},
+				_user$project$Types$indexGrid(grid)));
+	});
 var _user$project$State$updateUtil = F2(
 	function (msg, model) {
-		var _p12 = msg;
-		switch (_p12.ctor) {
+		var _p15 = msg;
+		switch (_p15.ctor) {
 			case 'Tick':
 				return _user$project$State$lifeGoesOn(model);
 			case 'Start':
@@ -9194,10 +9606,39 @@ var _user$project$State$updateUtil = F2(
 				return _elm_lang$core$Native_Utils.update(
 					model,
 					{timeIsTicking: false});
-			default:
+			case 'AdjustSpeed':
 				return _elm_lang$core$Native_Utils.update(
 					model,
-					{speed: _p12._0});
+					{speed: _p15._0});
+			default:
+				var _p16 = _p15._0;
+				return _elm_lang$core$Native_Utils.update(
+					model,
+					{
+						text: A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(_p16.x),
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								', ',
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									_elm_lang$core$Basics$toString(_p16.y),
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										' | ',
+										function (p) {
+											return A2(
+												_elm_lang$core$Basics_ops['++'],
+												_elm_lang$core$Basics$toString(p.x),
+												A2(
+													_elm_lang$core$Basics_ops['++'],
+													', ',
+													_elm_lang$core$Basics$toString(p.y)));
+										}(
+											A3(_user$project$State$transformPositionToCell, 1000, 1000, _p16)))))),
+						grid: A2(_user$project$State$addLife, model.grid, _p16)
+					});
 		}
 	});
 var _user$project$State$update = F2(
@@ -9219,7 +9660,7 @@ var _user$project$State$initGrid = A2(
 				_0: false,
 				_1: {
 					ctor: '::',
-					_0: true,
+					_0: false,
 					_1: {
 						ctor: '::',
 						_0: false,
@@ -9240,7 +9681,7 @@ var _user$project$State$initGrid = A2(
 						_0: false,
 						_1: {
 							ctor: '::',
-							_0: true,
+							_0: false,
 							_1: {ctor: '[]'}
 						}
 					}
@@ -9252,13 +9693,13 @@ var _user$project$State$initGrid = A2(
 					_elm_lang$core$Basics_ops['++'],
 					{
 						ctor: '::',
-						_0: true,
+						_0: false,
 						_1: {
 							ctor: '::',
-							_0: true,
+							_0: false,
 							_1: {
 								ctor: '::',
-								_0: true,
+								_0: false,
 								_1: {ctor: '[]'}
 							}
 						}
@@ -9271,7 +9712,7 @@ var _user$project$State$initGrid = A2(
 	_user$project$State$padDeadRow(97));
 var _user$project$State$init = {
 	ctor: '_Tuple2',
-	_0: {grid: _user$project$State$initGrid, text: 'hej', timeIsTicking: true, speed: 1},
+	_0: {grid: _user$project$State$initGrid, text: '', timeIsTicking: true, speed: 1},
 	_1: _elm_lang$core$Platform_Cmd$none
 };
 var _user$project$View$isLife = function (_p0) {
@@ -9333,10 +9774,10 @@ var _user$project$View$displayModel = function (model) {
 		_elm_lang$svg$Svg$svg,
 		{
 			ctor: '::',
-			_0: _elm_lang$svg$Svg_Attributes$width('750'),
+			_0: _elm_lang$svg$Svg_Attributes$width('1000'),
 			_1: {
 				ctor: '::',
-				_0: _elm_lang$svg$Svg_Attributes$height('750'),
+				_0: _elm_lang$svg$Svg_Attributes$height('1000'),
 				_1: {
 					ctor: '::',
 					_0: _elm_lang$svg$Svg_Attributes$viewBox('0 0 100 100'),
@@ -9480,8 +9921,21 @@ var _user$project$View$view = function (model) {
 			}
 		});
 };
-var _user$project$App$subscriptions = function (model) {
+var _user$project$App$mouseSub = _elm_lang$mouse$Mouse$clicks(_user$project$Types$MouseClick);
+var _user$project$App$timeSub = function (model) {
 	return (model.timeIsTicking && (!_elm_lang$core$Native_Utils.eq(model.speed, 0))) ? A2(_elm_lang$core$Time$every, _elm_lang$core$Time$millisecond * (500 / (model.speed + 0.5)), _user$project$Types$Tick) : _elm_lang$core$Platform_Sub$none;
+};
+var _user$project$App$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$batch(
+		{
+			ctor: '::',
+			_0: _user$project$App$timeSub(model),
+			_1: {
+				ctor: '::',
+				_0: _user$project$App$mouseSub,
+				_1: {ctor: '[]'}
+			}
+		});
 };
 var _user$project$App$main = _elm_lang$html$Html$program(
 	{init: _user$project$State$init, view: _user$project$View$view, subscriptions: _user$project$App$subscriptions, update: _user$project$State$update})();
