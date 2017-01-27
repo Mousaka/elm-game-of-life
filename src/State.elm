@@ -9,7 +9,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { grid = initGrid
       , text = ""
-      , timeIsTicking = True
+      , timeIsTicking = False
       , speed = 1
       }
     , Cmd.none
