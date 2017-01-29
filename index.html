@@ -9437,43 +9437,56 @@ var _user$project$State$gridSetterGetter = F2(
 			!A2(_user$project$State$gridGetter, grid, pos),
 			grid);
 	});
+var _user$project$State$wrapAroundCoords = F2(
+	function (length, _p5) {
+		var _p6 = _p5;
+		return {
+			ctor: '_Tuple2',
+			_0: A2(_elm_lang$core$Basics_ops['%'], _p6._0, length),
+			_1: A2(_elm_lang$core$Basics_ops['%'], _p6._1, length)
+		};
+	});
 var _user$project$State$countLivingNeighbours = F3(
 	function (grid, x, y) {
 		var getNeighbourCoords = F2(
 			function (x, y) {
-				return {
-					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: x - 1, _1: y + 1},
-					_1: {
+				return A2(
+					_elm_lang$core$List$map,
+					_user$project$State$wrapAroundCoords(
+						_elm_lang$core$Array$length(grid)),
+					{
 						ctor: '::',
-						_0: {ctor: '_Tuple2', _0: x, _1: y + 1},
+						_0: {ctor: '_Tuple2', _0: x - 1, _1: y + 1},
 						_1: {
 							ctor: '::',
-							_0: {ctor: '_Tuple2', _0: x + 1, _1: y + 1},
+							_0: {ctor: '_Tuple2', _0: x, _1: y + 1},
 							_1: {
 								ctor: '::',
-								_0: {ctor: '_Tuple2', _0: x - 1, _1: y},
+								_0: {ctor: '_Tuple2', _0: x + 1, _1: y + 1},
 								_1: {
 									ctor: '::',
-									_0: {ctor: '_Tuple2', _0: x + 1, _1: y},
+									_0: {ctor: '_Tuple2', _0: x - 1, _1: y},
 									_1: {
 										ctor: '::',
-										_0: {ctor: '_Tuple2', _0: x - 1, _1: y - 1},
+										_0: {ctor: '_Tuple2', _0: x + 1, _1: y},
 										_1: {
 											ctor: '::',
-											_0: {ctor: '_Tuple2', _0: x, _1: y - 1},
+											_0: {ctor: '_Tuple2', _0: x - 1, _1: y - 1},
 											_1: {
 												ctor: '::',
-												_0: {ctor: '_Tuple2', _0: x + 1, _1: y - 1},
-												_1: {ctor: '[]'}
+												_0: {ctor: '_Tuple2', _0: x, _1: y - 1},
+												_1: {
+													ctor: '::',
+													_0: {ctor: '_Tuple2', _0: x + 1, _1: y - 1},
+													_1: {ctor: '[]'}
+												}
 											}
 										}
 									}
 								}
 							}
 						}
-					}
-				};
+					});
 			});
 		var ncoords = A2(getNeighbourCoords, x, y);
 		return _elm_lang$core$List$length(
@@ -9484,62 +9497,62 @@ var _user$project$State$countLivingNeighbours = F3(
 	});
 var _user$project$State$deathRow = F3(
 	function (grid, y, row) {
-		var _p5 = row;
-		if (_p5.ctor === '::') {
-			var _p7 = _p5._0._0;
-			var _p6 = _p5._1;
-			var neighbours = A3(_user$project$State$countLivingNeighbours, grid, _p7, y);
-			return _p5._0._1 ? (((_elm_lang$core$Native_Utils.cmp(neighbours, 3) > 0) || (_elm_lang$core$Native_Utils.cmp(neighbours, 2) < 0)) ? A2(
+		var _p7 = row;
+		if (_p7.ctor === '::') {
+			var _p9 = _p7._0._0;
+			var _p8 = _p7._1;
+			var neighbours = A3(_user$project$State$countLivingNeighbours, grid, _p9, y);
+			return _p7._0._1 ? (((_elm_lang$core$Native_Utils.cmp(neighbours, 3) > 0) || (_elm_lang$core$Native_Utils.cmp(neighbours, 2) < 0)) ? A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p7, _1: false},
+					_0: {ctor: '_Tuple2', _0: _p9, _1: false},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p6)) : A2(
+				A3(_user$project$State$deathRow, grid, y, _p8)) : A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p7, _1: true},
+					_0: {ctor: '_Tuple2', _0: _p9, _1: true},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p6))) : (_elm_lang$core$Native_Utils.eq(neighbours, 3) ? A2(
+				A3(_user$project$State$deathRow, grid, y, _p8))) : (_elm_lang$core$Native_Utils.eq(neighbours, 3) ? A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p7, _1: true},
+					_0: {ctor: '_Tuple2', _0: _p9, _1: true},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p6)) : A2(
+				A3(_user$project$State$deathRow, grid, y, _p8)) : A2(
 				_elm_lang$core$Basics_ops['++'],
 				{
 					ctor: '::',
-					_0: {ctor: '_Tuple2', _0: _p7, _1: false},
+					_0: {ctor: '_Tuple2', _0: _p9, _1: false},
 					_1: {ctor: '[]'}
 				},
-				A3(_user$project$State$deathRow, grid, y, _p6)));
+				A3(_user$project$State$deathRow, grid, y, _p8)));
 		} else {
 			return {ctor: '[]'};
 		}
 	});
 var _user$project$State$killAndSpawnRow = F2(
-	function (grid, _p8) {
-		var _p9 = _p8;
-		var _p10 = _p9._0;
+	function (grid, _p10) {
+		var _p11 = _p10;
+		var _p12 = _p11._0;
 		return {
 			ctor: '_Tuple2',
-			_0: _p10,
+			_0: _p12,
 			_1: A3(
 				_user$project$State$deathRow,
 				grid,
-				_p10,
-				_elm_lang$core$Array$toIndexedList(_p9._1))
+				_p12,
+				_elm_lang$core$Array$toIndexedList(_p11._1))
 		};
 	});
 var _user$project$State$indexedListToGrid = function (indexedList) {
-	var removeIndex = function (_p11) {
-		var _p12 = _p11;
-		return _p12._1;
+	var removeIndex = function (_p13) {
+		var _p14 = _p13;
+		return _p14._1;
 	};
 	return A2(
 		_elm_lang$core$List$map,
@@ -9566,7 +9579,7 @@ var _user$project$State$lifeGoesOn = function (model) {
 var _user$project$State$padDeadCells = function (n) {
 	return A2(
 		_elm_lang$core$List$map,
-		function (_p13) {
+		function (_p15) {
 			return false;
 		},
 		A2(_elm_lang$core$List$range, 1, n));
@@ -9574,7 +9587,7 @@ var _user$project$State$padDeadCells = function (n) {
 var _user$project$State$padDeadRow = function (n) {
 	return A2(
 		_elm_lang$core$List$map,
-		function (_p14) {
+		function (_p16) {
 			return _user$project$State$padDeadCells(100);
 		},
 		A2(_elm_lang$core$List$range, 1, n));
@@ -9594,8 +9607,8 @@ var _user$project$State$addLife = F2(
 	});
 var _user$project$State$updateUtil = F2(
 	function (msg, model) {
-		var _p15 = msg;
-		switch (_p15.ctor) {
+		var _p17 = msg;
+		switch (_p17.ctor) {
 			case 'Tick':
 				return _user$project$State$lifeGoesOn(model);
 			case 'Start':
@@ -9609,21 +9622,21 @@ var _user$project$State$updateUtil = F2(
 			case 'AdjustSpeed':
 				return _elm_lang$core$Native_Utils.update(
 					model,
-					{speed: _p15._0});
+					{speed: _p17._0});
 			default:
-				var _p16 = _p15._0;
+				var _p18 = _p17._0;
 				return _elm_lang$core$Native_Utils.update(
 					model,
 					{
 						text: A2(
 							_elm_lang$core$Basics_ops['++'],
-							_elm_lang$core$Basics$toString(_p16.x),
+							_elm_lang$core$Basics$toString(_p18.x),
 							A2(
 								_elm_lang$core$Basics_ops['++'],
 								', ',
 								A2(
 									_elm_lang$core$Basics_ops['++'],
-									_elm_lang$core$Basics$toString(_p16.y),
+									_elm_lang$core$Basics$toString(_p18.y),
 									A2(
 										_elm_lang$core$Basics_ops['++'],
 										' | ',
@@ -9636,8 +9649,8 @@ var _user$project$State$updateUtil = F2(
 													', ',
 													_elm_lang$core$Basics$toString(p.y)));
 										}(
-											A3(_user$project$State$transformPositionToCell, 1000, 1000, _p16)))))),
-						grid: A2(_user$project$State$addLife, model.grid, _p16)
+											A3(_user$project$State$transformPositionToCell, 1000, 1000, _p18)))))),
+						grid: A2(_user$project$State$addLife, model.grid, _p18)
 					});
 		}
 	});

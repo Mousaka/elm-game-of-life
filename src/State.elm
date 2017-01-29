@@ -1,4 +1,4 @@
-module State exposing (update, init)
+module State exposing (update, init, wrapAroundCoords)
 
 import Types exposing (..)
 import Array exposing (..)
@@ -134,6 +134,11 @@ deathRow grid y row =
             []
 
 
+wrapAroundCoords : Int -> ( Int, Int ) -> ( Int, Int )
+wrapAroundCoords length ( x, y ) =
+    ( x % length, y % length )
+
+
 countLivingNeighbours : IndexedGrid -> Int -> Int -> Int
 countLivingNeighbours grid x y =
     let
@@ -147,6 +152,7 @@ countLivingNeighbours grid x y =
             , ( x, y - 1 )
             , ( x + 1, y - 1 )
             ]
+                |> List.map (wrapAroundCoords (Array.length grid))
 
         ncoords =
             getNeighbourCoords x y
